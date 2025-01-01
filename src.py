@@ -112,4 +112,33 @@ def accelerated_gradient_kdt(func, x0, recomp_tree, num_neighbors, num_iter, tol
         g = grad_kdtree(x, inds)
         k += 1
     return x
+
+def grad_potentials(X, points):
+    # returns the gradient of the potential in points
+    sqnorms_X = np.sum(X**2, axis=1)
+    sqnorms_points = np.sum(points**2, axis=1)
+    squared_dists = sqnorms_X[:, np.newaxis] + sqnorms_points[np.newaxis, :] - 2 * X @ points.T
+    squared_dists = np.minimum(squared_dists, 1)
     
+    multipliers = 4 * (squared_dists - 1).T
+
+    differences = X[np.newaxis, :, :] - points[:, np.newaxis, :]
+    grads = - differences * multipliers[:, :, np.newaxis]
+    return np.sum(grads, axis=1)
+
+def potentials_in_points(X, points):
+    # returns a vector of potentials for each point in points
+    sqnorms_X = np.sum(X**2, axis=1)
+    sqnorms_points = np.sum(points**2, axis=1)
+    squared_dists = sqnorms_X[:, np.newaxis] + sqnorms_points[np.newaxis, :] - 2 * X @ points.T
+    squared_dists = np.minimum(squared_dists, 1)
+    potentials = (1 - squared_dists)**2
+    return np.sum(potentials, axis=0)
+
+def potentials(X):
+    # returns a vector of potentials for each point in X
+    squared_norms = np.sum(X**2, axis=1)
+    squared_dists = squared_norms[:, np.newaxis] + squared_norms - 2 * X @ X.T
+    squared_dists = np.minimum(squared_dists, 1)
+    potentials_pairwise = (1 - squared_dists)**2
+    return np.sum(potentials_pairwise, axis=1) - np.ones(len(X))
